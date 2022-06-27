@@ -18,7 +18,6 @@ package pod_lister
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -26,7 +25,6 @@ import (
 	"os"
 
 	dto "github.com/prometheus/client_model/go"
-	"github.com/prometheus/common/expfmt"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -89,71 +87,72 @@ func httpGet(url string) (*http.Response, error) {
 
 // ListPods accesses Kubelet's metrics and obtain PodList
 func (k *KubeletPodLister) ListPods() (*[]corev1.Pod, error) {
-	resp, err := httpGet(podUrl)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get response: %v", err)
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %v", err)
-	}
-	podList := corev1.PodList{}
-	err = json.Unmarshal(body, &podList)
-	if err != nil {
-		log.Fatalf("failed to parse response body: %v", err)
-	}
+	// resp, err := httpGet(podUrl)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to get response: %v", err)
+	// }
+	// defer resp.Body.Close()
+	// body, err := ioutil.ReadAll(resp.Body)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to read response body: %v", err)
+	// }
+	// podList := corev1.PodList{}
+	// err = json.Unmarshal(body, &podList)
+	// if err != nil {
+	// 	log.Fatalf("failed to parse response body: %v", err)
+	// }
 
-	pods := &podList.Items
+	// pods := &podList.Items
 
-	return pods, nil
+	// return pods, nil
+	return &[]corev1.Pod{}, nil
 }
 
 // ListMetrics accesses Kubelet's metrics and obtain pods and node metrics
 func (k *KubeletPodLister) ListMetrics() (containerCPU map[string]float64, containerMem map[string]float64, nodeCPU float64, nodeMem float64, retErr error) {
-	resp, err := httpGet(metricsUrl)
-	if err != nil {
-		retErr = fmt.Errorf("failed to get response: %v", err)
-		return
-	}
-	defer resp.Body.Close()
-	var parser expfmt.TextParser
-	mf, err := parser.TextToMetricFamilies(resp.Body)
-	if err != nil {
-		retErr = fmt.Errorf("failed to parse: %v", err)
-		return
-	}
+	// resp, err := httpGet(metricsUrl)
+	// if err != nil {
+	// 	retErr = fmt.Errorf("failed to get response: %v", err)
+	// 	return
+	// }
+	// defer resp.Body.Close()
+	// var parser expfmt.TextParser
+	// mf, err := parser.TextToMetricFamilies(resp.Body)
+	// if err != nil {
+	// 	retErr = fmt.Errorf("failed to parse: %v", err)
+	// 	return
+	// }
 	containerCPU = make(map[string]float64)
 	containerMem = make(map[string]float64)
 	totalContainerMem := float64(0)
 	totalContainerCPU := float64(0)
-	for k, family := range mf {
-		for _, v := range family.Metric {
-			value := float64(0)
-			switch family.GetType() {
-			case dto.MetricType_COUNTER:
-				value = float64(v.GetCounter().GetValue())
-			case dto.MetricType_GAUGE:
-				value = float64(v.GetGauge().GetValue())
-			}
-			switch k {
-			case nodeCpuUsageMetricName:
-				nodeCPU = value
-			case nodeMemUsageMetricName:
-				nodeMem = value
-			case containerCpuUsageMetricName:
-				namespace, pod := parseLabels(v.GetLabel())
-				containerCPU[namespace+"/"+pod] = value
-				totalContainerCPU += value
-			case containerMemUsageMetricName:
-				namespace, pod := parseLabels(v.GetLabel())
-				containerMem[namespace+"/"+pod] = value
-				totalContainerMem += value
-			default:
-				continue
-			}
-		}
-	}
+	// for k, family := range mf {
+	// 	for _, v := range family.Metric {
+	// 		value := float64(0)
+	// 		switch family.GetType() {
+	// 		case dto.MetricType_COUNTER:
+	// 			value = float64(v.GetCounter().GetValue())
+	// 		case dto.MetricType_GAUGE:
+	// 			value = float64(v.GetGauge().GetValue())
+	// 		}
+	// 		switch k {
+	// 		case nodeCpuUsageMetricName:
+	// 			nodeCPU = value
+	// 		case nodeMemUsageMetricName:
+	// 			nodeMem = value
+	// 		case containerCpuUsageMetricName:
+	// 			namespace, pod := parseLabels(v.GetLabel())
+	// 			containerCPU[namespace+"/"+pod] = value
+	// 			totalContainerCPU += value
+	// 		case containerMemUsageMetricName:
+	// 			namespace, pod := parseLabels(v.GetLabel())
+	// 			containerMem[namespace+"/"+pod] = value
+	// 			totalContainerMem += value
+	// 		default:
+	// 			continue
+	// 		}
+	// 	}
+	// }
 	systemContainerMem := nodeMem - totalContainerMem
 	systemContainerCPU := nodeCPU - totalContainerCPU
 	systemContainerName := systemProcessNamespace + "/" + systemProcessName

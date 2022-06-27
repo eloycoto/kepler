@@ -208,6 +208,11 @@ func (c *Collector) reader() {
 						continue
 					}
 					comm := (*C.char)(unsafe.Pointer(&ct.Command))
+					fmt.Println("**********************************************")
+					fmt.Println("**********************************************")
+					fmt.Printf("pid %v cgroup %v cmd %v\n", ct.PID, ct.CGroupPID, C.GoString(comm))
+					fmt.Println("**********************************************")
+					fmt.Println("**********************************************")
 					// fmt.Printf("pid %v cgroup %v cmd %v\n", ct.PID, ct.CGroupPID, C.GoString(comm))
 					podName, err := pod_lister.GetPodNameFromcGgroupID(ct.CGroupPID)
 					if err != nil {
